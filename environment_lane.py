@@ -212,7 +212,7 @@ class Environment_lane():
             next_moves.append(next_move)
         return next_moves
                    
-    #____________________________state_parser()______________________________#
+    #____________________________state_parser()_______________________________#
     # returns unique tag specifying current self.state (int) 
     def state_parser(self):
         num = 0
@@ -220,7 +220,9 @@ class Environment_lane():
             num = num + int(self.state[i]) ** (1+i)
         return int(num)
     
+    #_______________________________agent_state()_____________________________#
     # returns the percieved state by agent (current location and 3 spaces head)
+    # inputs: agent_num (int)
     def agent_state(self,agent_num):
         evens = []
         odds = []

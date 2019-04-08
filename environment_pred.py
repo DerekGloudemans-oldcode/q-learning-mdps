@@ -3,12 +3,8 @@
 
 # import required packages
 import numpy as np
-import matplotlib.pyplot as plt
 import random
 
-#configure plot properties
-plt.style.use('seaborn')
-plt.rcParams.update({'font.size': 20})
 
 
 ########################## Environment_pred Class ##############################

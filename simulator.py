@@ -10,6 +10,7 @@ import random
 import _pickle as pickle
 from environment_pred import Environment_pred
 from environment_lane import Environment_lane
+from environment_pris import Environment_pris
 
 #configure plot properties
 plt.style.use('seaborn')
@@ -43,7 +44,6 @@ class Simulator():
         # params - as above, for tagging trial
         # sum_all_rewards - sum of rewards per episode averaged over simulations (1-d numpy array)
     def trial(self,params,results_queue):
-        print("Process created.")
         random.seed = 1
         sum_all_rewards = np.zeros(self.num_episodes)
         sum_all_steps   = np.zeros(self.num_episodes)
@@ -76,20 +76,24 @@ class Simulator():
         # all-avg_rewards - sum of rewards per episode (1-d numpy array)
         # sum_all_rewards - env (the Environment object with final SA vales)
     def simulation(self,params,random_seed):
+        
         # initialize environment - this line changes based on Environment
-        #env = Environment_pred(2,4,params)
         if self.env_type == 'lane':
             env = Environment_lane(self.num_agents,params,random_seed)
         elif self.env_type == 'pred':
             env = Environment_pred(self.num_agents,4,params,random_seed)
-
+        elif self.env_type == 'pris':
+            env = Environment_pris(False,params)
+            
+        # initialize arrays to hold results
         all_avg_rewards = np.zeros(self.num_episodes)
         all_steps = np.zeros(self.num_episodes)
         
-        for i in range(0,self.num_episodes):
-            #print("On episode {}.".format(i))            
+        # get results for all episodes
+        for i in range(0,self.num_episodes):          
             random_seed_new = random_seed*(1+i)
-            all_avg_rewards[i],all_steps[i] = self.episode(env,random_seed_new,i)
+            all_avg_rewards[i], all_steps[i] = self.episode(env,random_seed_new,i)
+            
         return all_avg_rewards,all_steps,env
     
     
@@ -112,13 +116,13 @@ class Simulator():
         terminal = True
         while terminal:
             env.get_start_state()
-            if env.get_reward() == 0:
+            if env.get_reward() == 0 or self.env_type == 'pris':
                 terminal = False
         
-        # modiy epsilon values if decreasing
+        # modify epsilon values if 'decreasing'
         if env.agents[0]['params']['epsilon'] == 'decreasing' and True:
             for a in env.agents:
-                a['params']['epsilon'] = 1/(episode_num/100+1.0)
+                a['params']['epsilon'] = 0.05/(episode_num/10+1.0)
         
         #used for SARSA
         next_moves = []
@@ -132,14 +136,14 @@ class Simulator():
             # save move and, in the case of lane environemnt, previous percieved state
             for i in range(0,env.num_agents):
                 move,prev_state_num = env.action_selection(i)
+                # if SARSA, instead use the moves selected in the previous update_values call
                 if env.agents[i]['params']['method'] == 'SARSA' and len(next_moves) > 0:
                     move = next_moves[i]
                 moves.append(move)
+                # append local state to prev_state_nums
                 prev_state_nums.append(prev_state_num)
                 
-            
-            
-            # save state_num before advancing states
+            # save state_num before advancing states -pred uses a global state 
             if self.env_type == 'pred':
                 prev_state_nums = env.state_parser()
             
@@ -159,15 +163,18 @@ class Simulator():
             steps = steps + 1
             
             # if reward was goal state, terminate
-            if reward == 1 or reward == -10:
+            if reward == 1 or reward == -10 or self.env_type == 'pris':
                 terminal = True
                 errors = 0
                 if reward == -10:
                     errors = 1
+                    # arbitrarily increase step count if an error occurs
                     steps = steps + 40
                     
+            # monitor current progress of episode        
             if show:   
                 print("Sum rewards: {} N steps: {}".format(sum_rewards, steps))
+        
         return sum_rewards, steps
     
     
@@ -203,7 +210,6 @@ class Simulator():
         pool = mp.Pool(processes=6)
         m = mp.Manager()
         results_queue = m.Queue()
-        print("Got here")
         for epsilon,gamma,alpha,method,mod in itertools.product( \
                     self.all_params['epsilons'], \
                     self.all_params['gammas'], \
@@ -217,7 +223,6 @@ class Simulator():
                       'mod':          mod
                       }
             out = pool.apply_async(self.trial,(params,results_queue))
-        print("We got here")
         #read all results from the results_queue into readable format
         while len(self.results) < n_trials :
             msg = results_queue.get()
@@ -225,6 +230,8 @@ class Simulator():
             if type(msg) == tuple:
                 self.results.append(msg)
                 print("{} processes terminated.".format(len(self.results)))
+        
+        print("All processes created. Waiting for processes to terminate.")
         while 1:
             if len(self.results) == n_trials:
                 pool.close()
@@ -243,7 +250,7 @@ class Simulator():
         vals2 = []
         labels = []
         for i in range(0,len(results)):
-            if results[i][0]['epsilon'] == 0.1:
+            if results[i][0]['epsilon'] == 0.1 or True:
                 vals.append(results[i][1])
                 vals2.append(results[i][2])
                 params = results[i][0]
@@ -287,27 +294,22 @@ class Simulator():
     
 ############################# BEGIN BODY CODE #################################
 if __name__ == '__main__':
+
+    # define agent parameters
     all_params = {
-    'epsilons'    : [0.25,0.1],
-    'gammas'      : [0.9],
-    'alphas'      : [0.1,0.4],
-    'methods'     : ['SARSA'],
-    'mods'        : ['','distributed','hysteretic']
-    }
-    all_params = {
-    'epsilons'    : [0.1],
+    'epsilons'    : [0.1, 'decreasing'],
     'gammas'      : [0.9],
     'alphas'      : [0.4],
-    'methods'     : ['Q','SARSA'],
+    'methods'     : ['Q'],
     'mods'        : ['','distributed','hysteretic']
     }
     
     # define parameters for simulator
     multip = True
-    n_sims = 200
-    n_eps = 300
+    n_sims = 2000
+    n_eps = 1000
     n_agents = 2
-    env = 'lane'
+    env = 'pris'
     n_trials = len(all_params['epsilons'])*len(all_params['alphas'])* \
     len(all_params['gammas'])*len(all_params['methods'])*len(all_params['mods'])
     
@@ -322,9 +324,9 @@ if __name__ == '__main__':
     vals = []
     
     # plot results
-    sim.plot_all_trials(1)
+    sim.plot_all_trials(11)
     
     # save results
-    f = open("results_lane.cpkl",'wb')
+    f = open("results_temp_name.cpkl",'wb')
     pickle.dump(sim.results,f)
     f.close()
