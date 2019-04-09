@@ -10,7 +10,7 @@ import random
 import _pickle as pickle
 from environment_pred import Environment_pred
 from environment_lane import Environment_lane
-from environment_pris import Environment_pris
+from environment_mat import Environment_mat
 
 #configure plot properties
 plt.style.use('seaborn')
@@ -55,7 +55,7 @@ class Simulator():
                 print("On simulation {} of {}".format(i+1,self.num_sims))
             random_seed = (i+1)*self.num_sims*self.num_agents
             
-            rewards,steps,env = self.simulation(params,random_seed)
+            rewards,steps = self.simulation(params,random_seed)
             sum_all_rewards = sum_all_rewards + rewards
             sum_all_steps = steps + sum_all_steps
             
@@ -82,8 +82,8 @@ class Simulator():
             env = Environment_lane(self.num_agents,params,random_seed)
         elif self.env_type == 'pred':
             env = Environment_pred(self.num_agents,4,params,random_seed)
-        elif self.env_type == 'pris':
-            env = Environment_pris(False,params)
+        elif self.env_type == 'mat':
+            env = Environment_mat(True,params)
             
         # initialize arrays to hold results
         all_avg_rewards = np.zeros(self.num_episodes)
@@ -94,7 +94,7 @@ class Simulator():
             random_seed_new = random_seed*(1+i)
             all_avg_rewards[i], all_steps[i] = self.episode(env,random_seed_new,i)
             
-        return all_avg_rewards,all_steps,env
+        return all_avg_rewards,all_steps
     
     
     #_______________________________episode()_________________________________#
@@ -116,7 +116,7 @@ class Simulator():
         terminal = True
         while terminal:
             env.get_start_state()
-            if env.get_reward() == 0 or self.env_type == 'pris':
+            if env.get_reward() == 0 or self.env_type == 'mat':
                 terminal = False
         
         # modify epsilon values if 'decreasing'
@@ -163,7 +163,7 @@ class Simulator():
             steps = steps + 1
             
             # if reward was goal state, terminate
-            if reward == 1 or reward == -10 or self.env_type == 'pris':
+            if reward == 1 or reward == -10 or self.env_type == 'mat':
                 terminal = True
                 errors = 0
                 if reward == -10:
@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
     # define agent parameters
     all_params = {
-    'epsilons'    : [0.1, 'decreasing'],
+    'epsilons'    : ['decreasing'],
     'gammas'      : [0.9],
     'alphas'      : [0.4],
     'methods'     : ['Q'],
@@ -306,10 +306,10 @@ if __name__ == '__main__':
     
     # define parameters for simulator
     multip = True
-    n_sims = 2000
-    n_eps = 1000
+    n_sims = 3000
+    n_eps = 2000
     n_agents = 2
-    env = 'pris'
+    env = 'mat'
     n_trials = len(all_params['epsilons'])*len(all_params['alphas'])* \
     len(all_params['gammas'])*len(all_params['methods'])*len(all_params['mods'])
     
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     vals = []
     
     # plot results
-    sim.plot_all_trials(11)
+    sim.plot_all_trials(21)
     
     # save results
     f = open("results_temp_name.cpkl",'wb')

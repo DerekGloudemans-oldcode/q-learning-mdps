@@ -7,7 +7,7 @@ import random
 # Environment classes provide functions for maintaining agents, the environment, 
 # and the interaction between them
 # Environment_pred represents the predator CMDP as discussed in Laetitia et al.
-class Environment_pris():
+class Environment_mat():
     
     #_________________________Environment_lane()______________________________#
     # initializes a 1-lane bridge environment
