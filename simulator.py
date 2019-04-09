@@ -105,6 +105,7 @@ class Simulator():
             # next state, select actions, get reward, and update SA values
             # as well as maintain agent SA vals and state representation
         # random_seed - unique for each episode (int)
+        # episode_num (int)
     # returns: sum_rewards - sum of all rewards recieved by agents during episode
     def episode(self,env,random_seed,episode_num):
         show = False
@@ -163,6 +164,7 @@ class Simulator():
             steps = steps + 1
             
             # if reward was goal state, terminate
+            # for matrix games, all episodes only 1 step
             if reward == 1 or reward == -10 or self.env_type == 'mat':
                 terminal = True
                 errors = 0
@@ -293,6 +295,7 @@ class Simulator():
     
     
 ############################# BEGIN BODY CODE #################################
+        
 if __name__ == '__main__':
 
     # define agent parameters
@@ -305,7 +308,7 @@ if __name__ == '__main__':
     }
     
     # define parameters for simulator
-    multip = True
+    multip = False
     n_sims = 3000
     n_eps = 2000
     n_agents = 2

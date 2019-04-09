@@ -6,11 +6,12 @@ import random
 ########################## Environment_pred Class ##############################
 # Environment classes provide functions for maintaining agents, the environment, 
 # and the interaction between them
-# Environment_pred represents the predator CMDP as discussed in Laetitia et al.
+# Environment_mat represents a matrix game with 2 agents, 
+# stochasitic - controls whether there is a stochasitic reward in the game
 class Environment_mat():
     
-    #_________________________Environment_lane()______________________________#
-    # initializes a 1-lane bridge environment
+    #_________________________Environment_mat()______________________________#
+    # initializes a matrix game environment
     # inputs:
         # num agents (int > 1)
         # agent params - dictionary of agent parameters (e,a,g,method, mod)
@@ -69,7 +70,7 @@ class Environment_mat():
     #_________________________action_selection ()______________________________#
     # selects an action for one agent according to epsilon-greedy policy
     # inputs: agent_num (int)
-    # returns: move (int 0 or 1)
+    # returns: move (int 0 - 3)
     def action_selection(self,agent_num): #Q-learning and variants, SARSA and variants supported
         
         epsilon = self.agents[agent_num]['params']['epsilon']
